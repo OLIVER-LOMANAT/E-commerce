@@ -7,9 +7,8 @@
 		"dev": "nodemon backend/server.js",
 		"start": "node backend/server.js",
 		"build": "npm install",
-		"install-deps": "npm install",
-		"client-install": "cd frontend && npm install",
-		"client-build": "cd frontend && npm run build"
+		"render-start": "cd backend && node server.js",
+		"render-build": "npm install"
 	},
 	"keywords": [],
 	"author": "",
@@ -19,18 +18,19 @@
 		"bcryptjs": "^2.4.3",
 		"cloudinary": "^2.4.0",
 		"cookie-parser": "^1.4.6",
+		"cors": "^2.8.5",
 		"dotenv": "^16.4.5",
-		"express": "^4.19.2",
+		"express": "^4.19.2", 
 		"ioredis": "^5.4.1",
 		"jsonwebtoken": "^9.0.2",
 		"mongoose": "^8.5.3",
-		"stripe": "^16.8.0",
-		"cors": "^2.8.5"
+		"stripe": "^16.8.0"
 	},
 	"devDependencies": {
 		"nodemon": "^3.1.4"
 	},
 	"engines": {
-		"node": ">=18.0.0"
+		"node": "18.x",
+		"npm": "9.x"
 	}
 }
