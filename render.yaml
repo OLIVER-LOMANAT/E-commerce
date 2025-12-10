@@ -1,29 +1,15 @@
 services:
   - type: web
-    name: e-commerce-backend
+    name: e-commerce-store
     env: node
-    buildCommand: npm run build
-    startCommand: npm start
+    buildCommand: npm run render-build
+    startCommand: npm run render-start
+    plan: free
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: MONGO_URI
-        sync: false
-      - key: ACCESS_TOKEN_SECRET
-        sync: false
-      - key: REFRESH_TOKEN_SECRET
-        sync: false
-      - key: CLOUDINARY_CLOUD_NAME
-        sync: false
-      - key: CLOUDINARY_API_KEY
-        sync: false
-      - key: CLOUDINARY_API_SECRET
-        sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: CLIENT_URL
-        sync: false
-      - key: UPSTASH_REDIS_URL
-        sync: false
-    healthCheckPath: /api/products
-    autoDeploy: true
+      - key: PORT
+        value: 10000
+    regions:
+      - oregon

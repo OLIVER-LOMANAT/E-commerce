@@ -13,30 +13,40 @@ export const getAllProducts = async (req, res) => {
 };
 
 export const getFeaturedProducts = async (req, res) => {
-	try {
-		let featuredProducts = await redis.get("featured_products");
-		if (featuredProducts) {
-			return res.json(JSON.parse(featuredProducts));
-		}
+  try {
+    let featuredProducts;
+    
+    // Try to get from Redis, but don't fail if Redis is down
+    try {
+      const cached = await redis.get("featured_products");
+      if (cached) {
+        return res.json(JSON.parse(cached));
+      }
+    } catch (redisError) {
+      console.log("Redis cache miss or error:", redisError.message);
+      // Continue to database query
+    }
 
-		// if not in redis, fetch from mongodb
-		// .lean() is gonna return a plain javascript object instead of a mongodb document
-		// which is good for performance
-		featuredProducts = await Product.find({ isFeatured: true }).lean();
+    // If not in redis or redis failed, fetch from MongoDB
+    featuredProducts = await Product.find({ isFeatured: true }).lean();
 
-		if (!featuredProducts) {
-			return res.status(404).json({ message: "No featured products found" });
-		}
+    if (!featuredProducts || featuredProducts.length === 0) {
+      return res.status(404).json({ message: "No featured products found" });
+    }
 
-		// store in redis for future quick access
+    // Try to store in Redis, but don't fail if it doesn't work
+    try {
+      await redis.set("featured_products", JSON.stringify(featuredProducts));
+    } catch (redisError) {
+      console.log("Failed to cache in Redis:", redisError.message);
+      // Continue anyway
+    }
 
-		await redis.set("featured_products", JSON.stringify(featuredProducts));
-
-		res.json(featuredProducts);
-	} catch (error) {
-		console.log("Error in getFeaturedProducts controller", error.message);
-		res.status(500).json({ message: "Server error", error: error.message });
-	}
+    res.json(featuredProducts);
+  } catch (error) {
+    console.log("Error in getFeaturedProducts controller", error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 };
 
 export const createProduct = async (req, res) => {
@@ -142,14 +152,16 @@ export const toggleFeaturedProduct = async (req, res) => {
 		res.status(500).json({ message: "Server error", error: error.message });
 	}
 };
-
+// Update the cache function too
 async function updateFeaturedProductsCache() {
-	try {
-		// The lean() method  is used to return plain JavaScript objects instead of full Mongoose documents. This can significantly improve performance
-
-		const featuredProducts = await Product.find({ isFeatured: true }).lean();
-		await redis.set("featured_products", JSON.stringify(featuredProducts));
-	} catch (error) {
-		console.log("error in update cache function");
-	}
+  try {
+    const featuredProducts = await Product.find({ isFeatured: true }).lean();
+    try {
+      await redis.set("featured_products", JSON.stringify(featuredProducts));
+    } catch (redisError) {
+      console.log("Failed to update Redis cache:", redisError.message);
+    }
+  } catch (error) {
+    console.log("Error in update cache function:", error.message);
+  }
 }

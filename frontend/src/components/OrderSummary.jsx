@@ -2,12 +2,7 @@ import { motion } from "framer-motion";
 import { useCartStore } from "../stores/useCartStore";
 import { Link } from "react-router-dom";
 import { MoveRight } from "lucide-react";
-import { loadStripe } from "@stripe/stripe-js";
 import axios from "../lib/axios";
-
-const stripePromise = loadStripe(
-	"pk_test_51KZYccCoOZF2UhtOwdXQl3vcizup20zqKqT9hVUIsVzsdBrhqbUI2fE0ZdEVLdZfeHjeyFXtqaNsyCJCmZWnjNZa00PzMAjlcL"
-);
 
 const OrderSummary = () => {
 	const { total, subtotal, coupon, isCouponApplied, cart } = useCartStore();
@@ -18,19 +13,57 @@ const OrderSummary = () => {
 	const formattedSavings = savings.toFixed(2);
 
 	const handlePayment = async () => {
-		const stripe = await stripePromise;
-		const res = await axios.post("/payments/create-checkout-session", {
-			products: cart,
-			couponCode: coupon ? coupon.code : null,
-		});
+		try {
+			console.log("🟢 [Frontend] Starting checkout process...");
+			console.log("Cart items:", cart.length);
+			console.log("Cart:", cart);
+			console.log("Coupon:", coupon?.code || "None");
+			
+			// Prepare products in correct format
+			const products = cart.map(item => ({
+				_id: item._id,
+				name: item.name,
+				price: item.price,
+				image: item.image,
+				quantity: item.quantity || 1
+			}));
 
-		const session = res.data;
-		const result = await stripe.redirectToCheckout({
-			sessionId: session.id,
-		});
+			console.log("Sending to backend:", { products, couponCode: coupon?.code || null });
+			
+			const res = await axios.post("/payments/create-checkout-session", {
+				products,
+				couponCode: coupon ? coupon.code : null,
+			});
 
-		if (result.error) {
-			console.error("Error:", result.error);
+			console.log("✅ [Frontend] Checkout response received:", res.data);
+			
+			if (res.data.success && res.data.sessionUrl) {
+				// REDIRECT DIRECTLY TO STRIPE CHECKOUT
+				console.log("🔄 Redirecting to Stripe checkout...");
+				console.log("URL:", res.data.sessionUrl);
+				window.location.href = res.data.sessionUrl;
+			} else if (res.data.id) {
+				// Fallback for old response format
+				console.log("⚠️ Using old response format with sessionId");
+				window.location.href = `https://checkout.stripe.com/c/pay/${res.data.id}`;
+			} else {
+				console.error("❌ No session URL or ID returned:", res.data);
+				alert("Failed to create checkout session. Please try again.");
+			}
+			
+		} catch (error) {
+			console.error("❌ [Frontend] Checkout failed:", error);
+			console.error("Error details:", {
+				message: error.message,
+				response: error.response?.data,
+				status: error.response?.status
+			});
+			
+			if (error.response?.status === 401) {
+				alert("Please login to proceed with checkout");
+			} else {
+				alert(`Checkout failed: ${error.response?.data?.message || error.message}`);
+			}
 		}
 	};
 
