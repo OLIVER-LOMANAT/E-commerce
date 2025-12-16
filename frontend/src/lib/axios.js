@@ -1,44 +1,21 @@
 import axios from "axios";
 
+// Fix: Ensure baseURL always ends with /api
+const getBaseURL = () => {
+  const envURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  
+  // Add /api if missing
+  if (!envURL.endsWith('/api')) {
+    console.log("⚠️ Fixing baseURL - adding /api to:", envURL);
+    return envURL.endsWith('/') ? envURL + 'api' : envURL + '/api';
+  }
+  return envURL;
+};
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  baseURL: getBaseURL(),
   withCredentials: true,
 });
 
-// ADD THESE INTERCEPTORS FOR DEBUGGING:
-axiosInstance.interceptors.request.use(
-  config => {
-    console.log("📤 Axios Request:", {
-      url: config.url,
-      fullUrl: config.baseURL + config.url,
-      method: config.method,
-    });
-    return config;
-  },
-  error => {
-    console.error("📤 Axios Request Error:", error);
-    return Promise.reject(error);
-  }
-);
-
-axiosInstance.interceptors.response.use(
-  response => {
-    console.log("📥 Axios Response:", {
-      url: response.config.url,
-      status: response.status,
-      data: response.data,
-    });
-    return response;
-  },
-  error => {
-    console.error("📥 Axios Response Error:", {
-      url: error.config?.url,
-      fullUrl: error.config?.baseURL + error.config?.url,
-      status: error.response?.status,
-      message: error.message,
-    });
-    return Promise.reject(error);
-  }
-);
-
+// Remove debug interceptors if you want
 export default axiosInstance;

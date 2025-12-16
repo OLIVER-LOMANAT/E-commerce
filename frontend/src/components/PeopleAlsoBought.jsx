@@ -11,37 +11,11 @@ const PeopleAlsoBought = () => {
 	useEffect(() => {
 		const fetchRecommendations = async () => {
 			try {
-				// DEBUG: Let's see what's happening
-				console.log("Axios baseURL:", axios.defaults.baseURL);
-				console.log("Making request to: products/recommendations");
-				
-				// Option 1: Try with debug
-				const res = await axios.get("products/recommendations", {
-					// Add timeout and debug
-					timeout: 10000,
-				});
-				
-				console.log("Success! Got data:", res.data);
+				// Now this will work with fixed axios.js
+				const res = await axios.get("products/recommendations");
 				setRecommendations(res.data);
 			} catch (error) {
-				console.error("Full error details:", error);
-				console.error("Error config:", error.config);
-				console.error("Request URL was:", error.config?.baseURL + error.config?.url);
-				
-				// Try direct fetch as fallback
-				try {
-					console.log("Trying direct fetch...");
-					const directResponse = await fetch("https://e-commerce-18gj.onrender.com/api/products/recommendations");
-					if (directResponse.ok) {
-						const data = await directResponse.json();
-						console.log("Direct fetch worked!", data);
-						setRecommendations(data);
-						return;
-					}
-				} catch (fallbackError) {
-					console.error("Fallback also failed:", fallbackError);
-				}
-				
+				console.error("Error:", error);
 				toast.error("Failed to load recommendations");
 			} finally {
 				setIsLoading(false);
@@ -57,7 +31,7 @@ const PeopleAlsoBought = () => {
 		return (
 			<div className='mt-8'>
 				<h3 className='text-2xl font-semibold text-emerald-400'>People also bought</h3>
-				<p className='mt-4 text-gray-400'>No recommendations available at the moment.</p>
+				<p className='mt-4 text-gray-400'>No recommendations available.</p>
 			</div>
 		);
 	}
