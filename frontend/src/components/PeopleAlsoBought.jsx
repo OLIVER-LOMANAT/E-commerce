@@ -11,12 +11,12 @@ const PeopleAlsoBought = () => {
 	useEffect(() => {
 		const fetchRecommendations = async () => {
 			try {
-				// FIXED: Remove leading slash
-				const res = await axios.get("products/recommendations");
+				// TEMPORARY FIX: Use absolute URL
+				const res = await axios.get("https://e-commerce-18gj.onrender.com/api/products/recommendations");
 				setRecommendations(res.data);
 			} catch (error) {
 				console.error("Error fetching recommendations:", error);
-				toast.error(error.response?.data?.message || "Failed to load product recommendations");
+				toast.error("Failed to load recommendations");
 			} finally {
 				setIsLoading(false);
 			}
