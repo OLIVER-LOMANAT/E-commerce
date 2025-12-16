@@ -19,22 +19,21 @@ const storeRefreshToken = async (userId, refreshToken) => {
     await redis.set(`refresh_token:${userId}`, refreshToken, "EX", 7 * 24 * 60 * 60);
   } catch (error) {
     console.error("Failed to store refresh token in Redis:", error.message);
-    // You might want to log this but not fail the request
   }
 };
 
 const setCookies = (res, accessToken, refreshToken) => {
 	res.cookie("accessToken", accessToken, {
-		httpOnly: true, // prevent XSS attacks, cross site scripting attack
+		httpOnly: true,
 		secure: process.env.NODE_ENV === "production",
-		sameSite: "strict", // prevents CSRF attack, cross-site request forgery attack
-		maxAge: 15 * 60 * 1000, // 15 minutes
+		sameSite: "none",
+		maxAge: 15 * 60 * 1000,
 	});
 	res.cookie("refreshToken", refreshToken, {
-		httpOnly: true, // prevent XSS attacks, cross site scripting attack
+		httpOnly: true,
 		secure: process.env.NODE_ENV === "production",
-		sameSite: "strict", // prevents CSRF attack, cross-site request forgery attack
-		maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+		sameSite: "none",
+		maxAge: 7 * 24 * 60 * 60 * 1000,
 	});
 };
 
@@ -48,7 +47,6 @@ export const signup = async (req, res) => {
 		}
 		const user = await User.create({ name, email, password });
 
-		// authenticate
 		const { accessToken, refreshToken } = generateTokens(user._id);
 		await storeRefreshToken(user._id, refreshToken);
 
@@ -100,12 +98,17 @@ export const logout = async (req, res) => {
         await redis.del(`refresh_token:${decoded.userId}`);
       } catch (redisError) {
         console.error("Redis error during logout:", redisError.message);
-        // Continue clearing cookies even if Redis fails
       }
     }
 
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken", {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
+    });
+    res.clearCookie("refreshToken", {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
+    });
     res.json({ message: "Logged out successfully" });
   } catch (error) {
     console.log("Error in logout controller", error.message);
@@ -113,7 +116,6 @@ export const logout = async (req, res) => {
   }
 };
 
-// this will refresh the access token
 export const refreshToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
@@ -124,14 +126,11 @@ export const refreshToken = async (req, res) => {
 
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     
-    // Try to get from Redis, but handle failure
     let storedToken;
     try {
       storedToken = await redis.get(`refresh_token:${decoded.userId}`);
     } catch (redisError) {
       console.error("Redis error in refreshToken:", redisError.message);
-      // If Redis is down, you might want to allow the refresh anyway
-      // or implement an alternative validation method
       storedToken = null;
     }
 
@@ -144,7 +143,7 @@ export const refreshToken = async (req, res) => {
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "none",
       maxAge: 15 * 60 * 1000,
     });
 
