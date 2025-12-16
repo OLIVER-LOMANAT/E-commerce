@@ -11,7 +11,7 @@ const PeopleAlsoBought = () => {
 	useEffect(() => {
 		const fetchRecommendations = async () => {
 			try {
-				// FIXED: Remove leading slash since baseURL already has /api
+				// FIXED: Remove leading slash
 				const res = await axios.get("products/recommendations");
 				setRecommendations(res.data);
 			} catch (error) {
@@ -35,7 +35,7 @@ const PeopleAlsoBought = () => {
 			</div>
 		);
 	}
-	// Its was cganged
+
 	return (
 		<div className='mt-8'>
 			<h3 className='text-2xl font-semibold text-emerald-400'>People also bought</h3>
