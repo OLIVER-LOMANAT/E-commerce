@@ -3,7 +3,7 @@ import Order from "../models/order.model.js";
 import { stripe } from "../lib/stripe.js";
 
 export const createCheckoutSession = async (req, res) => {
-  console.log("🟢 createCheckoutSession called");
+  console.log("createCheckoutSession called");
   console.log("User ID:", req.user?._id);
   console.log("Request body products:", req.body.products?.length || 0);
   
@@ -12,7 +12,7 @@ export const createCheckoutSession = async (req, res) => {
 
     // Validate products
     if (!Array.isArray(products) || products.length === 0) {
-      console.error("❌ Invalid products array");
+      console.error("Invalid products array");
       return res.status(400).json({ 
         error: "Invalid or empty products array",
         received: products 
@@ -22,7 +22,7 @@ export const createCheckoutSession = async (req, res) => {
     // Validate each product
     for (const product of products) {
       if (!product.price || product.price <= 0) {
-        console.error("❌ Invalid product price:", product);
+        console.error("Invalid product price:", product);
         return res.status(400).json({ 
           error: `Invalid price for product: ${product.name}`,
           product 
@@ -67,14 +67,14 @@ export const createCheckoutSession = async (req, res) => {
       };
     });
 
-    console.log(`📊 Line items: ${lineItems.length}, Total: $${totalAmount / 100}`);
+    console.log(`Line items: ${lineItems.length}, Total: $${totalAmount / 100}`);
 
     // Handle coupon
     let coupon = null;
     let stripeCouponId = null;
     
     if (couponCode) {
-      console.log(`🎫 Checking coupon: ${couponCode}`);
+      console.log(`Checking coupon: ${couponCode}`);
       coupon = await Coupon.findOne({ 
         code: couponCode, 
         userId: req.user._id, 
@@ -82,22 +82,22 @@ export const createCheckoutSession = async (req, res) => {
       });
       
       if (coupon) {
-        console.log(`✅ Coupon found: ${coupon.discountPercentage}% off`);
+        console.log(`Coupon found: ${coupon.discountPercentage}% off`);
         const discountAmount = Math.round((totalAmount * coupon.discountPercentage) / 100);
         totalAmount -= discountAmount;
-        console.log(`💰 New total after coupon: $${totalAmount / 100}`);
+        console.log(`New total after coupon: $${totalAmount / 100}`);
         
         // Create Stripe coupon
         try {
           stripeCouponId = await createStripeCoupon(coupon.discountPercentage);
-          console.log(`🎫 Stripe coupon created: ${stripeCouponId}`);
+          console.log(`Stripe coupon created: ${stripeCouponId}`);
         } catch (couponError) {
-          console.error("❌ Failed to create Stripe coupon:", couponError.message);
+          console.error("Failed to create Stripe coupon:", couponError.message);
           // Continue without coupon rather than failing
           stripeCouponId = null;
         }
       } else {
-        console.log("❌ Coupon not found or not active");
+        console.log("Coupon not found or not active");
       }
     }
 
@@ -129,22 +129,22 @@ export const createCheckoutSession = async (req, res) => {
     // Add discounts if coupon exists
     if (stripeCouponId) {
       sessionData.discounts = [{ coupon: stripeCouponId }];
-      console.log("✅ Added discount to session");
+      console.log("Added discount to session");
     }
 
-    console.log("📝 Creating Stripe session...");
+    console.log("Creating Stripe session...");
     
     // Create Stripe session
     const session = await stripe.checkout.sessions.create(sessionData);
     
-    console.log("✅ Stripe session created!");
+    console.log("Stripe session created!");
     console.log("Session ID:", session.id);
     console.log("Session URL:", session.url);
     console.log("Amount total:", session.amount_total);
 
     // Create gift coupon for large purchases ($200+)
     if (totalAmount >= 20000) {
-      console.log("🎁 Creating gift coupon for large purchase");
+      console.log("Creating gift coupon for large purchase");
       try {
         await createNewCoupon(req.user._id);
       } catch (couponError) {
@@ -161,7 +161,7 @@ export const createCheckoutSession = async (req, res) => {
     });
     
   } catch (error) {
-    console.error("❌ Error in createCheckoutSession:", error);
+    console.error("Error in createCheckoutSession:", error);
     console.error("Error stack:", error.stack);
     
     if (error.type === 'StripeInvalidRequestError') {
@@ -178,7 +178,7 @@ export const createCheckoutSession = async (req, res) => {
 };
 
 export const checkoutSuccess = async (req, res) => {
-  console.log("🟢 checkoutSuccess called");
+  console.log("checkoutSuccess called");
   console.log("Session ID:", req.body.sessionId);
   
   try {
@@ -191,17 +191,17 @@ export const checkoutSuccess = async (req, res) => {
       });
     }
 
-    console.log("🔍 Retrieving Stripe session:", sessionId);
+    console.log("Retrieving Stripe session:", sessionId);
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     console.log("Session status:", session.payment_status);
     console.log("Session metadata:", session.metadata);
 
     if (session.payment_status === "paid") {
-      console.log("✅ Payment confirmed as paid");
+      console.log("Payment confirmed as paid");
       
       // Deactivate coupon if used
       if (session.metadata.couponCode) {
-        console.log(`🔄 Deactivating coupon: ${session.metadata.couponCode}`);
+        console.log(`Deactivating coupon: ${session.metadata.couponCode}`);
         try {
           await Coupon.findOneAndUpdate(
             {
@@ -213,7 +213,7 @@ export const checkoutSuccess = async (req, res) => {
               usedAt: new Date(),
             }
           );
-          console.log("✅ Coupon deactivated");
+          console.log("Coupon deactivated");
         } catch (couponError) {
           console.error("Failed to deactivate coupon:", couponError.message);
         }
@@ -223,7 +223,7 @@ export const checkoutSuccess = async (req, res) => {
       let products = [];
       try {
         products = JSON.parse(session.metadata.products || '[]');
-        console.log(`📦 Products in order: ${products.length}`);
+        console.log(`Products in order: ${products.length}`);
       } catch (parseError) {
         console.error("Failed to parse products:", parseError);
         products = [];
@@ -244,7 +244,7 @@ export const checkoutSuccess = async (req, res) => {
       });
 
       await newOrder.save();
-      console.log("✅ Order created:", newOrder._id);
+      console.log("Order created:", newOrder._id);
 
       res.status(200).json({
         success: true,
@@ -253,14 +253,14 @@ export const checkoutSuccess = async (req, res) => {
         order: newOrder,
       });
     } else {
-      console.log("❌ Payment not completed, status:", session.payment_status);
+      console.log("Payment not completed, status:", session.payment_status);
       res.status(400).json({
         success: false,
         message: `Payment not completed. Status: ${session.payment_status}`,
       });
     }
   } catch (error) {
-    console.error("❌ Error in checkoutSuccess:", error);
+    console.error("Error in checkoutSuccess:", error);
     console.error("Error stack:", error.stack);
     
     res.status(500).json({ 
@@ -272,7 +272,7 @@ export const checkoutSuccess = async (req, res) => {
 };
 
 async function createStripeCoupon(discountPercentage) {
-  console.log(`🎫 Creating Stripe coupon: ${discountPercentage}% off`);
+  console.log(`Creating Stripe coupon: ${discountPercentage}% off`);
   
   try {
     const coupon = await stripe.coupons.create({
@@ -281,17 +281,17 @@ async function createStripeCoupon(discountPercentage) {
       name: `${discountPercentage}% Discount`,
     });
     
-    console.log(`✅ Stripe coupon created: ${coupon.id}`);
+    console.log(`Stripe coupon created: ${coupon.id}`);
     return coupon.id;
     
   } catch (error) {
-    console.error("❌ Failed to create Stripe coupon:", error.message);
+    console.error("Failed to create Stripe coupon:", error.message);
     throw new Error(`Failed to create Stripe coupon: ${error.message}`);
   }
 }
 
 async function createNewCoupon(userId) {
-  console.log("🎁 Creating new gift coupon for user:", userId);
+  console.log("Creating new gift coupon for user:", userId);
   
   try {
     // Check if user already has an active gift coupon
@@ -302,7 +302,7 @@ async function createNewCoupon(userId) {
     });
     
     if (existingCoupon) {
-      console.log("✅ User already has active gift coupon:", existingCoupon.code);
+      console.log("User already has active gift coupon:", existingCoupon.code);
       return existingCoupon;
     }
     
@@ -318,12 +318,12 @@ async function createNewCoupon(userId) {
     });
 
     await newCoupon.save();
-    console.log(`✅ Gift coupon created: ${couponCode}`);
+    console.log(`Gift coupon created: ${couponCode}`);
     
     return newCoupon;
     
   } catch (error) {
-    console.error("❌ Failed to create gift coupon:", error.message);
+    console.error("Failed to create gift coupon:", error.message);
     // Don't crash the checkout process
     return null;
   }

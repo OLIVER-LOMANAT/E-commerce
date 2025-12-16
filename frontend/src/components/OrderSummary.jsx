@@ -14,7 +14,7 @@ const OrderSummary = () => {
 
 	const handlePayment = async () => {
 		try {
-			console.log("🟢 [Frontend] Starting checkout process...");
+			console.log("[Frontend] Starting checkout process...");
 			console.log("Cart items:", cart.length);
 			console.log("Cart:", cart);
 			console.log("Coupon:", coupon?.code || "None");
@@ -35,24 +35,23 @@ const OrderSummary = () => {
 				couponCode: coupon ? coupon.code : null,
 			});
 
-			console.log("✅ [Frontend] Checkout response received:", res.data);
+			console.log("[Frontend] Checkout response received:", res.data);
 			
 			if (res.data.success && res.data.sessionUrl) {
-				// REDIRECT DIRECTLY TO STRIPE CHECKOUT
-				console.log("🔄 Redirecting to Stripe checkout...");
+				console.log("Redirecting to Stripe checkout...");
 				console.log("URL:", res.data.sessionUrl);
 				window.location.href = res.data.sessionUrl;
 			} else if (res.data.id) {
 				// Fallback for old response format
-				console.log("⚠️ Using old response format with sessionId");
+				console.log("Using old response format with sessionId");
 				window.location.href = `https://checkout.stripe.com/c/pay/${res.data.id}`;
 			} else {
-				console.error("❌ No session URL or ID returned:", res.data);
+				console.error("No session URL or ID returned:", res.data);
 				alert("Failed to create checkout session. Please try again.");
 			}
 			
 		} catch (error) {
-			console.error("❌ [Frontend] Checkout failed:", error);
+			console.error("[Frontend] Checkout failed:", error);
 			console.error("Error details:", {
 				message: error.message,
 				response: error.response?.data,

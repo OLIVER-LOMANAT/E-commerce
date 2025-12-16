@@ -5,9 +5,9 @@
 	"main": "backend/server.js",
 	"scripts": {
 		"dev": "nodemon backend/server.js",
-		"start": "node backend/server.js",
+		"start": "cd backend && node server.js",
 		"build": "npm install && cd frontend && npm install && npm run build",
-		"render-start": "node backend/server.js",
+		"render-start": "cd backend && node server.js",
 		"render-build": "npm install && cd frontend && npm install && npm run build",
 		"install-all": "npm install && cd frontend && npm install"
 	},

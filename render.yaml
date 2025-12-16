@@ -2,6 +2,7 @@ services:
   - type: web
     name: e-commerce-store
     env: node
+    rootDir: . # This tells Render to use root directory
     buildCommand: npm run render-build
     startCommand: npm run render-start
     plan: free

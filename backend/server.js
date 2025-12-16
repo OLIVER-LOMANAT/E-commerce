@@ -1,18 +1,6 @@
-// ⚠️⚠️⚠️ THIS MUST BE AT THE VERY TOP - BEFORE ANY OTHER IMPORTS ⚠️⚠️⚠️
 import dotenv from "dotenv";
 // Load environment variables IMMEDIATELY
 dotenv.config();
-
-// DEBUG: Check if env vars are loaded
-console.log("=== Environment Variables Check ===");
-console.log("PORT:", process.env.PORT || "NOT FOUND");
-console.log("MONGO_URI:", process.env.MONGO_URI ? "FOUND" : "NOT FOUND");
-console.log("STRIPE_SECRET_KEY:", process.env.STRIPE_SECRET_KEY ? "FOUND" : "NOT FOUND");
-console.log("UPSTASH_REDIS_URL:", process.env.UPSTASH_REDIS_URL ? "FOUND" : "NOT FOUND");
-console.log("NODE_ENV:", process.env.NODE_ENV || "development");
-console.log("==================================");
-
-// Now import other modules (AFTER dotenv.config())
 import express from "express";
 import cookieParser from "cookie-parser";
 import path from "path";
@@ -31,13 +19,13 @@ import { connectDB } from "./lib/db.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Fix for ES modules __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Get current working directory for production
-const currentDir = process.cwd();
-console.log("Current directory:", currentDir);
+// Get the root directory (where package.json is)
+const rootDir = path.resolve(__dirname, '..');
+console.log("Root directory (where package.json is):", rootDir);
+console.log("Backend directory:", __dirname);
 
 // CORS configuration for production
 const allowedOrigins = [
@@ -77,49 +65,42 @@ app.get("/health", (req, res) => {
   res.status(200).json({ 
     status: "OK", 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    rootDir: rootDir,
+    backendDir: __dirname
   });
 });
 
 // Production static files
 if (process.env.NODE_ENV === "production") {
-  console.log("🔄 Production mode: Serving frontend files");
+  console.log("Production mode: Serving frontend files");
   
-  // Try multiple possible paths for frontend build
-  const possiblePaths = [
-    path.join(currentDir, 'frontend', 'dist'),
-    path.join(__dirname, '..', 'frontend', 'dist'),
-    path.join(currentDir, 'dist')
-  ];
+  // Frontend build is in root/frontend/dist
+  const frontendBuildPath = path.join(rootDir, 'frontend', 'dist');
+  console.log(`Looking for frontend build at: ${frontendBuildPath}`);
   
-  let staticPath = null;
-  for (const p of possiblePaths) {
-    try {
-      const fs = await import('fs');
-      if (fs.existsSync(p)) {
-        console.log(`✅ Found frontend build at: ${p}`);
-        staticPath = p;
-        break;
-      }
-    } catch (error) {
-      console.log(`❌ Path not found: ${p}`);
-    }
-  }
-  
-  if (staticPath) {
-    console.log(`📁 Serving static files from: ${staticPath}`);
-    app.use(express.static(staticPath));
+  // Check if frontend build exists
+  const fs = await import('fs');
+  if (fs.existsSync(frontendBuildPath)) {
+    console.log(`Found frontend build at: ${frontendBuildPath}`);
+    console.log(`Serving static files from: ${frontendBuildPath}`);
     
+    app.use(express.static(frontendBuildPath));
+    
+    // Handle all other routes by serving index.html
     app.get("*", (req, res) => {
-      res.sendFile(path.join(staticPath, "index.html"));
+      res.sendFile(path.join(frontendBuildPath, "index.html"));
     });
   } else {
-    console.log("⚠️ No frontend build found, running API-only mode");
+    console.log("No frontend build found, running API-only mode");
+    console.log("Expected path:", frontendBuildPath);
+    
     app.get("/", (req, res) => {
       res.json({ 
         message: "E-commerce API is running", 
-        frontend: "Frontend not built or not found",
-        docs: "Use /api endpoints"
+        frontend: "Frontend build not found. Check if 'npm run build' ran successfully.",
+        expectedPath: frontendBuildPath,
+        api: "API available at /api endpoints"
       });
     });
   }
@@ -129,14 +110,16 @@ if (process.env.NODE_ENV === "production") {
     res.json({ 
       message: "E-commerce API is running in development mode",
       frontend: "Running on http://localhost:5173",
-      api: "Available at /api endpoints"
+      api: "Available at /api endpoints",
+      rootDir: rootDir,
+      backendDir: __dirname
     });
   });
 }
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error("❌ Error:", err.stack);
+  console.error("Error:", err.stack);
   res.status(500).json({
     error: process.env.NODE_ENV === 'production' 
       ? 'Something went wrong!' 
@@ -146,9 +129,10 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 CORS allowed origins: ${allowedOrigins.join(', ')}`);
-  console.log(`📁 Current directory: ${currentDir}`);
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`CORS allowed origins: ${allowedOrigins.join(', ')}`);
+  console.log(`Root directory: ${rootDir}`);
+  console.log(`Backend directory: ${__dirname}`);
   connectDB();
 });
