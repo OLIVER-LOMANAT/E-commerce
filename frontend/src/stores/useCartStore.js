@@ -11,7 +11,7 @@ export const useCartStore = create((set, get) => ({
 
 	getMyCoupon: async () => {
 		try {
-			const response = await axios.get("/api/coupons");
+			const response = await axios.get("coupons"); // FIXED
 			set({ coupon: response.data });
 		} catch (error) {
 			console.error("Error fetching coupon:", error);
@@ -19,7 +19,7 @@ export const useCartStore = create((set, get) => ({
 	},
 	applyCoupon: async (code) => {
 		try {
-			const response = await axios.post("/api/coupons/validate", { code });
+			const response = await axios.post("coupons/validate", { code }); // FIXED
 			set({ coupon: response.data, isCouponApplied: true });
 			get().calculateTotals();
 			toast.success("Coupon applied successfully");
@@ -35,7 +35,7 @@ export const useCartStore = create((set, get) => ({
 
 	getCartItems: async () => {
 		try {
-			const res = await axios.get("/api/cart");
+			const res = await axios.get("cart"); // FIXED
 			set({ cart: res.data });
 			get().calculateTotals();
 		} catch (error) {
@@ -48,7 +48,7 @@ export const useCartStore = create((set, get) => ({
 	},
 	addToCart: async (product) => {
 		try {
-			await axios.post("/api/cart", { productId: product._id });
+			await axios.post("cart", { productId: product._id }); // FIXED
 			toast.success("Product added to cart");
 
 			set((prevState) => {
@@ -66,7 +66,7 @@ export const useCartStore = create((set, get) => ({
 		}
 	},
 	removeFromCart: async (productId) => {
-		await axios.delete(`/api/cart`, { data: { productId } });
+		await axios.delete(`cart`, { data: { productId } }); // FIXED
 		set((prevState) => ({ cart: prevState.cart.filter((item) => item._id !== productId) }));
 		get().calculateTotals();
 	},
@@ -76,7 +76,7 @@ export const useCartStore = create((set, get) => ({
 			return;
 		}
 
-		await axios.put(`/api/cart/${productId}`, { quantity });
+		await axios.put(`cart/${productId}`, { quantity }); // FIXED
 		set((prevState) => ({
 			cart: prevState.cart.map((item) => (item._id === productId ? { ...item, quantity } : item)),
 		}));

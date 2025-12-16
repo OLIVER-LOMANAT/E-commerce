@@ -16,7 +16,7 @@ export const useUserStore = create((set, get) => ({
 		}
 
 		try {
-			const res = await axios.post("/api/auth/signup", { name, email, password });
+			const res = await axios.post("auth/signup", { name, email, password }); // FIXED
 			set({ user: res.data, loading: false });
 		} catch (error) {
 			set({ loading: false });
@@ -27,7 +27,7 @@ export const useUserStore = create((set, get) => ({
 		set({ loading: true });
 
 		try {
-			const res = await axios.post("/api/auth/login", { email, password });
+			const res = await axios.post("auth/login", { email, password }); // FIXED
 
 			set({ user: res.data, loading: false });
 		} catch (error) {
@@ -38,7 +38,7 @@ export const useUserStore = create((set, get) => ({
 
 	logout: async () => {
 		try {
-			await axios.post("/api/auth/logout");
+			await axios.post("auth/logout"); // FIXED
 			set({ user: null });
 		} catch (error) {
 			toast.error(error.response?.data?.message || "An error occurred during logout");
@@ -46,26 +46,26 @@ export const useUserStore = create((set, get) => ({
 	},
 
 	checkAuth: async () => {
-  set({ checkingAuth: true });
-  try {
-    const response = await axios.get("/api/auth/profile", {
-      // Don't throw error for 401 - it's normal when not logged in
-      validateStatus: function (status) {
-        return status < 500; // Only throw for server errors (500+)
-      }
-    });
-    
-    if (response.status === 200) {
-      set({ user: response.data, checkingAuth: false });
-    } else {
-      // 401 or other client error means not logged in
-      set({ user: null, checkingAuth: false });
-    }
-  } catch (error) {
-    // Only network errors come here
-    set({ checkingAuth: false, user: null });
-  }
-},
+		set({ checkingAuth: true });
+		try {
+			const response = await axios.get("auth/profile", { // FIXED
+				// Don't throw error for 401 - it's normal when not logged in
+				validateStatus: function (status) {
+					return status < 500; // Only throw for server errors (500+)
+				}
+			});
+			
+			if (response.status === 200) {
+				set({ user: response.data, checkingAuth: false });
+			} else {
+				// 401 or other client error means not logged in
+				set({ user: null, checkingAuth: false });
+			}
+		} catch (error) {
+			// Only network errors come here
+			set({ checkingAuth: false, user: null });
+		}
+	},
 
 	refreshToken: async () => {
 		// Prevent multiple simultaneous refresh attempts
@@ -73,7 +73,7 @@ export const useUserStore = create((set, get) => ({
 
 		set({ checkingAuth: true });
 		try {
-			const response = await axios.post("/api/auth/refresh-token");
+			const response = await axios.post("auth/refresh-token"); // FIXED
 			set({ checkingAuth: false });
 			return response.data;
 		} catch (error) {
@@ -82,8 +82,6 @@ export const useUserStore = create((set, get) => ({
 		}
 	},
 }));
-
-// TODO: Implement the axios interceptors for refreshing access token
 
 // Axios interceptor for token refresh
 let refreshPromise = null;
