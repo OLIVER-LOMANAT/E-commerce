@@ -16,9 +16,13 @@ import { connectDB } from "./lib/db.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// SIMPLE CORS - Remove all that complicated code
+// SIMPLE CORS - Add the new frontend URL
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://e-commerce-eyoslhb8u-oliver-lomanats-projects.vercel.app'],
+  origin: [
+    'http://localhost:5173', 
+    'https://e-commerce-eyoslhb8u-oliver-lomanats-projects.vercel.app',
+    'https://e-commerce-ruby-seven-24.vercel.app'  // ← ADD THIS NEW URL
+  ],
   credentials: true,
 }));
 
@@ -38,7 +42,12 @@ app.use("/api/analytics", analyticsRoutes);
 app.get("/health", (req, res) => {
   res.status(200).json({ 
     status: "OK", 
-    message: "Backend is working"
+    message: "Backend is working",
+    corsAllowed: [
+      'http://localhost:5173',
+      'https://e-commerce-eyoslhb8u-oliver-lomanats-projects.vercel.app',
+      'https://e-commerce-ruby-seven-24.vercel.app'
+    ]
   });
 });
 
@@ -46,8 +55,9 @@ app.get("/health", (req, res) => {
 app.get("/api/test", (req, res) => {
   res.json({ 
     message: "API is working",
-    frontend: "https://e-commerce-eyoslhb8u-oliver-lomanats-projects.vercel.app",
-    backend: "https://e-commerce-18gj.onrender.com"
+    frontend: "https://e-commerce-ruby-seven-24.vercel.app",
+    backend: "https://e-commerce-18gj.onrender.com",
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -55,11 +65,16 @@ app.get("/api/test", (req, res) => {
 app.get("/", (req, res) => {
   res.json({ 
     message: "E-commerce API",
-    docs: "Use /api endpoints"
+    docs: "Use /api endpoints",
+    cors: "Configured for new frontend domain"
   });
 });
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`CORS allowed origins:`);
+  console.log(`- http://localhost:5173`);
+  console.log(`- https://e-commerce-eyoslhb8u-oliver-lomanats-projects.vercel.app`);
+  console.log(`- https://e-commerce-ruby-seven-24.vercel.app`);
   connectDB();
 });
