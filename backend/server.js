@@ -16,13 +16,23 @@ import { connectDB } from "./lib/db.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// SIMPLE CORS - Add the new frontend URL
+// DYNAMIC CORS CONFIGURATION
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? [
+      'https://e-commerce-ruby-seven-24.vercel.app',
+      'https://e-commerce-eyoslhb8u-oliver-lomanats-projects.vercel.app'
+    ]
+  : ['http://localhost:5173'];
+
 app.use(cors({
-  origin: [
-    'http://localhost:5173', 
-    'https://e-commerce-eyoslhb8u-oliver-lomanats-projects.vercel.app',
-    'https://e-commerce-ruby-seven-24.vercel.app'  // ← ADD THIS NEW URL
-  ],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 
@@ -43,11 +53,19 @@ app.get("/health", (req, res) => {
   res.status(200).json({ 
     status: "OK", 
     message: "Backend is working",
-    corsAllowed: [
-      'http://localhost:5173',
-      'https://e-commerce-eyoslhb8u-oliver-lomanats-projects.vercel.app',
-      'https://e-commerce-ruby-seven-24.vercel.app'
-    ]
+    corsAllowed: allowedOrigins,
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Cookie test endpoint
+app.get("/api/test-cookies", (req, res) => {
+  res.json({
+    cookiesReceived: req.cookies,
+    origin: req.get('origin'),
+    secure: req.secure,
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -66,15 +84,15 @@ app.get("/", (req, res) => {
   res.json({ 
     message: "E-commerce API",
     docs: "Use /api endpoints",
-    cors: "Configured for new frontend domain"
+    cors: "Configured for cross-domain cookies",
+    allowedOrigins: allowedOrigins
   });
 });
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`CORS allowed origins:`);
-  console.log(`- http://localhost:5173`);
-  console.log(`- https://e-commerce-eyoslhb8u-oliver-lomanats-projects.vercel.app`);
-  console.log(`- https://e-commerce-ruby-seven-24.vercel.app`);
+  allowedOrigins.forEach(origin => console.log(`- ${origin}`));
   connectDB();
 });
